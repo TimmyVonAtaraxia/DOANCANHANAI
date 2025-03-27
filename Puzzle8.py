@@ -375,9 +375,60 @@ def is_solvable(state):
         for j in range(i + 1, len(flat_board)):
             if flat_board[i] > flat_board[j]:
                 inversions += 1
-
+ 
     # Trạng thái có thể giải được nếu số lần đảo ngược là chẵn
     return inversions % 2 == 0
+
+def simple_hill_climbing(initial_state, goal_state):
+    """
+    Thuật toán Simple Hill Climbing cho bài toán 8-Puzzle.
+    """
+    current_state = initial_state
+    path = [current_state]
+    visited = set()
+    steps = 0
+    start_time = time.time()
+
+    while current_state != goal_state:
+        visited.add(current_state)
+        steps += 1
+
+        # Lấy tất cả các trạng thái lân cận
+        neighbors = current_state.get_possible_moves()
+
+        # Tìm trạng thái lân cận tốt nhất dựa trên heuristic
+        next_state = None
+        min_heuristic = float('inf')
+        for neighbor in neighbors:
+            if neighbor not in visited:
+                h = heuristic(neighbor, goal_state)
+                if h < min_heuristic:
+                    min_heuristic = h
+                    next_state = neighbor
+
+        # Nếu không có trạng thái lân cận nào tốt hơn, dừng thuật toán
+        if next_state is None or min_heuristic >= heuristic(current_state, goal_state):
+            end_time = time.time()
+            return None, {
+                "error": "Không tìm thấy lời giải!",
+                "steps_checked": steps,
+                "time": end_time - start_time,
+                "states_visited": len(visited)
+            }
+
+        # Chuyển sang trạng thái lân cận tốt nhất
+        current_state = next_state
+        path.append(current_state)
+
+    # Nếu tìm thấy trạng thái đích
+    end_time = time.time()
+    result_info = {
+        "steps_checked": steps,
+        "path_length": len(path),
+        "time": end_time - start_time,
+        "states_visited": len(visited)
+    }
+    return path, result_info
 
 # Khởi tạo pygame
 pygame.init()
@@ -400,7 +451,7 @@ MARGIN = 10  # Khoảng cách giữa các bảng
 PADDING = 20  # Khoảng cách từ viền cửa sổ
 BOARD_SIZE = 3 * SIZE  # Kích thước của mỗi bảng
 SIDEBAR_WIDTH = 300  # Chiều rộng của thanh bên
-TOTAL_WIDTH = 840
+TOTAL_WIDTH = 1000
 TOTAL_HEIGHT = 800
 
 # Khởi tạo cửa sổ
@@ -524,7 +575,8 @@ def main_menu():
         "Greedy": (greedy_search, "Greedy", ORANGE),
         "A*": (a_star, "A*", RED),
         "IDA*": (ida_star, "IDA*", DARK_BLUE),
-        "IDS": (ids, "IDS", LIGHT_GREEN)
+        "IDS": (ids, "IDS", LIGHT_GREEN),
+        "Hill Climbing": (simple_hill_climbing, "Hill Climbing", ORANGE)
     }
     
     selected_algorithm = "BFS"
