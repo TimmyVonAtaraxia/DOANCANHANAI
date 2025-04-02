@@ -5,6 +5,7 @@ import copy
 import time
 import heapq
 import queue as Q
+import numpy as np
 
 # Priority Queue cho thuật toán UCS
 class PriorityQueue(object):
@@ -22,12 +23,14 @@ class PriorityQueue(object):
 
 class PuzzleState:
     def __init__(self, board, empty_pos=None):
-        self.board = board
+        self.board = np.asarray(board)  # Chuyển board thành mảng NumPy
         self.size = len(board)
+        if self.board.ndim != 2 or self.board.shape[0] != self.board.shape[1]:
+            raise ValueError("board phải là mảng 2 chiều vuông.")
         if empty_pos is None:
             for i in range(self.size):
                 for j in range(self.size):
-                    if board[i][j] == 0:
+                    if self.board[i][j] == 0:
                         self.empty_pos = (i, j)
                         return
         else:
@@ -40,7 +43,9 @@ class PuzzleState:
         return result
 
     def __eq__(self, other):
-        return self.board == other.board
+        if isinstance(other, PuzzleState):
+            return np.array_equal(self.board, other.board)
+        return False
 
     def __hash__(self):
         return hash(tuple(tuple(row) for row in self.board))
@@ -150,17 +155,20 @@ def ucs(initial_state, goal_state):
                 pq.put((cost + 1, counter, next_state, path + [next_state]))  # Thêm chi phí 1 mỗi bước
 
     return None, {"error": "Không tìm thấy lời giải!"}
-def heuristic(state, goal):
-    distance = 0
-    for i in range(state.size):
-        for j in range(state.size):
-            value = state.board[i][j]
-            if value != 0:  # Không tính ô trống
-                for x in range(goal.size):
-                    for y in range(goal.size):
-                        if goal.board[x][y] == value:
-                            distance += abs(x - i) + abs(y - j)
-    return distance
+def heuristic(state, goal_state):
+    """
+    Tính khoảng cách Manhattan giữa trạng thái hiện tại và trạng thái đích.
+    """
+    cost = 0
+    for num in range(1, 9):  # Bỏ qua ô trống
+        for i in range(state.size):
+            for j in range(state.size):
+                if state.board[i][j] == num:
+                    for x in range(goal_state.size):
+                        for y in range(goal_state.size):
+                            if goal_state.board[x][y] == num:
+                                cost += abs(x - i) + abs(y - j)  # Khoảng cách Manhattan
+    return cost
 
 def greedy_search(initial_state, goal_state):
     pq = []
@@ -451,7 +459,7 @@ MARGIN = 10  # Khoảng cách giữa các bảng
 PADDING = 20  # Khoảng cách từ viền cửa sổ
 BOARD_SIZE = 3 * SIZE  # Kích thước của mỗi bảng
 SIDEBAR_WIDTH = 300  # Chiều rộng của thanh bên
-TOTAL_WIDTH = 1000
+TOTAL_WIDTH = 1200
 TOTAL_HEIGHT = 800
 
 # Khởi tạo cửa sổ
@@ -576,7 +584,8 @@ def main_menu():
         "A*": (a_star, "A*", RED),
         "IDA*": (ida_star, "IDA*", DARK_BLUE),
         "IDS": (ids, "IDS", LIGHT_GREEN),
-        "Hill Climbing": (simple_hill_climbing, "Hill Climbing", ORANGE)
+        "Simple Hill Climbing": (simple_hill_climbing, "Simple Hill Climbing", ORANGE),
+        "Hill Climbing": (hill_climbing, "Hill Climbing", ORANGE)
     }
     
     selected_algorithm = "BFS"
@@ -648,21 +657,45 @@ def main_menu():
                     # Thực hiện giải thuật toán đã chọn
                     algo_func = algorithms[selected_algorithm][0]
                     print(f"Solving with {algorithms[selected_algorithm][1]}...")
-                    path, result_info = algo_func(initial_state, goal_state)
-                    if path:
-                        solved = True
-                        print(f"Solution found with {len(path)} steps")
-                        print(f"Algorithm checked {result_info['steps_checked']} states")
-                        print(f"Execution time: {result_info['time']:.4f} seconds")
-                        draw_message_box("Có thể thực hiện", GREEN)
-                        pygame.display.flip()
-                        pygame.time.wait(2000)
-                        visualize_solution(initial_state, goal_state, path, result_info)
+                    if selected_algorithm == "Hill Climbing":
+                        # Hill Climbing trả về trạng thái cuối cùng, cần xử lý khác
+                        final_state = algo_func(initial_state, goal_state)
+                        if final_state == goal_state:
+                            path = [initial_state, final_state]  # Đường đi chỉ có trạng thái ban đầu và cuối cùng
+                            result_info = {
+                                "steps_checked": 1,
+                                "path_length": len(path),
+                                "time": 0.0,
+                                "states_visited": 1
+                            }
+                            solved = True
+                            print("Solution found!")
+                            draw_message_box("Có thể thực hiện", GREEN)
+                            pygame.display.flip()
+                            pygame.time.wait(2000)
+                            visualize_solution(initial_state, goal_state, path, result_info)
+                        else:
+                            print("No solution found!")
+                            draw_message_box("Không thể thực hiện", RED)
+                            pygame.display.flip()
+                            pygame.time.wait(2000)
                     else:
-                        print("No solution found!")
-                        draw_message_box("Không thể thực hiện", RED)
-                        pygame.display.flip()
-                        pygame.time.wait(2000)
+                        # Các thuật toán khác
+                        path, result_info = algo_func(initial_state, goal_state)
+                        if path:
+                            solved = True
+                            print(f"Solution found with {len(path)} steps")
+                            print(f"Algorithm checked {result_info['steps_checked']} states")
+                            print(f"Execution time: {result_info['time']:.4f} seconds")
+                            draw_message_box("Có thể thực hiện", GREEN)
+                            pygame.display.flip()
+                            pygame.time.wait(2000)
+                            visualize_solution(initial_state, goal_state, path, result_info)
+                        else:
+                            print("No solution found!")
+                            draw_message_box("Không thể thực hiện", RED)
+                            pygame.display.flip()
+                            pygame.time.wait(2000)
         
         # Kiểm tra hover
         for button in algo_buttons.values():
@@ -827,6 +860,52 @@ def visualize_solution(initial_state, goal_state, path, result_info):
 
         pygame.display.flip()
         clock.tick(60)
+
+# Tìm vị trí ô trống (0)
+def find_blank(state):
+    """
+    Tìm vị trí của ô trống (giá trị 0) trong bảng.
+    """
+    board = np.asarray(state.board)  # Đảm bảo board là mảng NumPy
+    if board.ndim != 2:  # Kiểm tra nếu board không phải là mảng 2 chiều
+        raise ValueError("state.board phải là mảng NumPy 2 chiều.")
+    return np.where(board == 0)
+
+# Tạo các trạng thái lân cận bằng cách di chuyển ô trống
+def get_neighbors(state):
+    """
+    Tạo các trạng thái lân cận bằng cách di chuyển ô trống.
+    """
+    neighbors = []
+    x, y = find_blank(state)  # Tìm vị trí ô trống
+    x, y = x[0], y[0]  # Lấy giá trị từ mảng trả về của np.where
+    moves = [(-1, 0), (1, 0), (0, -1), (0, 1)]  # Lên, xuống, trái, phải
+
+    for dx, dy in moves:
+        new_x, new_y = x + dx, y + dy
+        if 0 <= new_x < state.size and 0 <= new_y < state.size:  # Kiểm tra trong phạm vi bảng
+            new_board = copy.deepcopy(state.board)
+            new_board[x][y], new_board[new_x][new_y] = new_board[new_x][new_y], new_board[x][y]  # Hoán đổi ô trống
+            neighbors.append(PuzzleState(new_board, (new_x, new_y)))  # Tạo trạng thái mới
+
+    return neighbors
+
+# Thuật toán Hill Climbing tìm nước đi tốt nhất
+def hill_climbing(start_state, goal_state):
+    """
+    Thuật toán Hill Climbing tìm trạng thái tốt nhất.
+    """
+    state = start_state
+    while True:
+        neighbors = get_neighbors(state)
+        best_neighbor = min(neighbors, key=lambda neighbor: heuristic(neighbor, goal_state), default=None)  # Chọn trạng thái có heuristic nhỏ nhất
+        
+        if best_neighbor is None or heuristic(best_neighbor, goal_state) >= heuristic(state, goal_state):
+            break  # Không có bước nào tốt hơn, dừng lại
+        
+        state = best_neighbor  # Cập nhật trạng thái tốt nhất
+
+    return state
 
 def main():
     main_menu()
