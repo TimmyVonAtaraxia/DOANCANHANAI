@@ -580,7 +580,8 @@ def algorithm_menu():
         "Simple Hill Climbing",
         "Hill Climbing",
         "Stochastic Hill Climbing",
-        "Simulated Annealing"  # Thêm Simulated Annealing
+        "Simulated Annealing",
+        "Beam Search"
     ]
 
     # Tạo các nút cho từng thuật toán
@@ -655,8 +656,9 @@ def main_menu():
             "Simple Hill Climbing": (simple_hill_climbing, "Simple Hill Climbing", ORANGE),
             "Hill Climbing": (hill_climbing, "Hill Climbing", ORANGE),
             "Stochastic Hill Climbing": (stochastic_hill_climbing, "Stochastic Hill Climbing", LIGHT_BLUE),
-            "Simulated Annealing": (simulated_annealing, "Simulated Annealing", YELLOW)  # Thêm Simulated Annealing
-        }
+            "Simulated Annealing": (simulated_annealing, "Simulated Annealing", YELLOW),  
+            "Beam Search": (beam_search, "Beam Search", ORANGE)        
+            }
 
         solved = False
         path = None
@@ -1029,6 +1031,55 @@ def stochastic_hill_climbing(initial_state, goal_state):
         "states_visited": len(visited)
     }
     return path, result_info
+
+def beam_search(initial_state, goal_state, beam_width=2):
+    """
+    Thuật toán Beam Search cho bài toán 8-Puzzle.
+    """
+    start_time = time.time()
+    steps = 0
+    visited = set()
+
+    # Khởi tạo danh sách các trạng thái hiện tại (beam)
+    beam = [(initial_state, [])]  # (trạng thái, đường đi)
+
+    while beam:
+        steps += 1
+        next_beam = []
+
+        for current_state, path in beam:
+            # Kiểm tra nếu đã đạt trạng thái đích
+            if current_state == goal_state:
+                end_time = time.time()
+                result_info = {
+                    "steps_checked": steps,
+                    "path_length": len(path),
+                    "time": end_time - start_time,
+                    "states_visited": len(visited)
+                }
+                return path, result_info
+
+            # Đánh dấu trạng thái hiện tại là đã thăm
+            visited.add(current_state)
+
+            # Lấy tất cả các trạng thái lân cận
+            for neighbor in current_state.get_possible_moves():
+                if neighbor not in visited:
+                    new_path = path + [neighbor]
+                    next_beam.append((neighbor, new_path))
+
+        # Sắp xếp các trạng thái lân cận theo heuristic và chỉ giữ lại `beam_width` trạng thái tốt nhất
+        next_beam.sort(key=lambda x: heuristic(x[0], goal_state))
+        beam = next_beam[:beam_width]
+
+    # Nếu không tìm thấy lời giải
+    end_time = time.time()
+    return None, {
+        "error": "Không tìm thấy lời giải!",
+        "steps_checked": steps,
+        "time": end_time - start_time,
+        "states_visited": len(visited)
+    }
 
 
 def main():
