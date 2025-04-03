@@ -459,8 +459,8 @@ MARGIN = 10  # Khoảng cách giữa các bảng
 PADDING = 20  # Khoảng cách từ viền cửa sổ
 BOARD_SIZE = 3 * SIZE  # Kích thước của mỗi bảng
 SIDEBAR_WIDTH = 300  # Chiều rộng của thanh bên
-TOTAL_WIDTH = 1200
-TOTAL_HEIGHT = 800
+TOTAL_WIDTH = 1000 # Chiều rộng của cửa sổ
+TOTAL_HEIGHT = 800 # Chiều cao của cửa sổ
 
 # Khởi tạo cửa sổ
 SCREEN = pygame.display.set_mode((TOTAL_WIDTH, TOTAL_HEIGHT))
@@ -558,129 +558,157 @@ def draw_message_box(message, color=GREEN):
     text_rect = text.get_rect(center=(box_x + box_width // 2, box_y + box_height // 2))
     SCREEN.blit(text, text_rect)
 
-def main_menu():
-    # Thông số mặc định
-    initial_board = [
-        [2, 6, 5],
-        [0, 8, 7],
-        [4, 3, 1]
-    ]
-
-    goal_board = [
-        [1, 2, 3],
-        [4, 5, 6],
-        [7, 8, 0]
-    ]
-
-    initial_state = PuzzleState(initial_board)
-    goal_state = PuzzleState(goal_board)
-    
-    # Các tùy chọn thuật toán
-    algorithms = {
-        "BFS": (bfs, "BFS", LIGHT_GREEN),
-        "DFS": (dfs, "DFS", LIGHT_BLUE),
-        "UCS": (ucs, "UCS", YELLOW),
-        "Greedy": (greedy_search, "Greedy", ORANGE),
-        "A*": (a_star, "A*", RED),
-        "IDA*": (ida_star, "IDA*", DARK_BLUE),
-        "IDS": (ids, "IDS", LIGHT_GREEN),
-        "Simple Hill Climbing": (simple_hill_climbing, "Simple Hill Climbing", ORANGE),
-        "Hill Climbing": (hill_climbing, "Hill Climbing", ORANGE)
-    }
-    
-    selected_algorithm = "BFS"
-    solved = False
-    path = None
-    result_info = None
-    
-    # Tạo các nút thuật toán
-    algo_buttons = {}
-    for i, algo_key in enumerate(algorithms.keys()):
-        x = PADDING + i * (SIDEBAR_WIDTH // 3 + 20)  # Căn đều các nút theo chiều ngang
-        y = TOTAL_HEIGHT - 100  # Đặt các nút ở phía dưới
-        algo_buttons[algo_key] = Button(
-            x, y, SIDEBAR_WIDTH // 3, 50, 
-            algorithms[algo_key][1], 
-            color=algorithms[algo_key][2]
-        )
-    
-    # Tính toán vị trí của nút Solve để nằm giữa các nút thuật toán
-    total_algo_width = len(algorithms) * (SIDEBAR_WIDTH // 3 + 20) - 20  # Tổng chiều rộng của các nút thuật toán
-    solve_x = PADDING + (total_algo_width - (SIDEBAR_WIDTH - 40)) // 2  # Căn giữa nút Solve
-
-    # Tạo nút giải
-    solve_button = Button(
-        solve_x,  # Vị trí x đã được tính toán để căn giữa
-        TOTAL_HEIGHT - 160, 
-        SIDEBAR_WIDTH - 40, 50, 
-        "Solve", 
-        color=GREEN, 
-        hover_color=LIGHT_GREEN
-    )
-    
-    # Vị trí của các bảng
-    initial_x = PADDING
-    goal_x = TOTAL_WIDTH - BOARD_SIZE - PADDING
-    board_y = PADDING + 100  # Đặt bảng trạng thái ở trên cùng
-    
-    # Vòng lặp chính
+def algorithm_menu():
+    """
+    Hiển thị menu để người dùng chọn thuật toán.
+    """
     running = True
     clock = pygame.time.Clock()
-    
+    selected_algorithm = None
+
+    # Danh sách các thuật toán
+    algorithms = [
+        "BFS",
+        "DFS",
+        "UCS",
+        "Greedy",
+        "A*",
+        "IDA*",
+        "IDS",
+        "Simple Hill Climbing",
+        "Hill Climbing",
+        "Stochastic Hill Climbing"
+    ]
+
+    # Tạo các nút cho từng thuật toán
+    buttons = []
+    for i, algo in enumerate(algorithms):
+        x = TOTAL_WIDTH // 2 - 150
+        y = 100 + i * 60
+        buttons.append(Button(x, y, 300, 50, algo, color=LIGHT_BLUE, hover_color=GREEN))
+
     while running:
         mouse_pos = pygame.mouse.get_pos()
-        
+
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()
                 sys.exit()
-            
-            # Kiểm tra sự kiện click chuột
-            if event.type == pygame.MOUSEBUTTONDOWN:
-                for algo_key, button in algo_buttons.items():
+            elif event.type == pygame.MOUSEBUTTONDOWN:
+                for i, button in enumerate(buttons):
                     if button.is_clicked(mouse_pos, event):
-                        selected_algorithm = algo_key
-                        # Reset kết quả khi chọn thuật toán mới
-                        solved = False
-                        path = None
-                        result_info = None
-                
-                if solve_button.is_clicked(mouse_pos, event):
-                    # Kiểm tra trạng thái có thể giải được
-                    if not is_solvable(initial_state):
-                        print("Trạng thái không thể giải được!")
-                        draw_message_box("Không thể giải được", RED)
-                        pygame.display.flip()
-                        pygame.time.wait(2000)  # Hiển thị thông báo trong 2 giây
-                        continue
+                        selected_algorithm = algorithms[i]
+                        running = False
 
-                    # Thực hiện giải thuật toán đã chọn
-                    algo_func = algorithms[selected_algorithm][0]
-                    print(f"Solving with {algorithms[selected_algorithm][1]}...")
-                    if selected_algorithm == "Hill Climbing":
-                        # Hill Climbing trả về trạng thái cuối cùng, cần xử lý khác
-                        final_state = algo_func(initial_state, goal_state)
-                        if final_state == goal_state:
-                            path = [initial_state, final_state]  # Đường đi chỉ có trạng thái ban đầu và cuối cùng
-                            result_info = {
-                                "steps_checked": 1,
-                                "path_length": len(path),
-                                "time": 0.0,
-                                "states_visited": 1
-                            }
-                            solved = True
-                            print("Solution found!")
-                            draw_message_box("Có thể thực hiện", GREEN)
+        # Xóa màn hình
+        SCREEN.fill(WHITE)
+
+        # Tiêu đề menu
+        title = TITLE_FONT.render("Chọn thuật toán để giải 8-Puzzle", True, BLACK)
+        SCREEN.blit(title, (TOTAL_WIDTH // 2 - title.get_width() // 2, 20))
+
+        # Vẽ các nút
+        for button in buttons:
+            button.check_hover(mouse_pos)
+            button.draw()
+
+        pygame.display.flip()
+        clock.tick(60)
+
+    return selected_algorithm
+
+def main_menu():
+    while True:  # Thêm vòng lặp để quay lại menu chọn thuật toán
+        # Gọi menu chọn thuật toán
+        selected_algorithm = algorithm_menu()
+        if not selected_algorithm:
+            return  # Nếu không chọn thuật toán, thoát khỏi menu chính
+
+        # Thông số mặc định
+        initial_board = [
+            [2, 6, 5],
+            [0, 8, 7],
+            [4, 3, 1]
+        ]
+
+        goal_board = [
+            [1, 2, 3],
+            [4, 5, 6],
+            [7, 8, 0]
+        ]
+
+        initial_state = PuzzleState(initial_board)
+        goal_state = PuzzleState(goal_board)
+        
+        # Các tùy chọn thuật toán
+        algorithms = {
+            "BFS": (bfs, "BFS", LIGHT_GREEN),
+            "DFS": (dfs, "DFS", LIGHT_BLUE),
+            "UCS": (ucs, "UCS", YELLOW),
+            "Greedy": (greedy_search, "Greedy", ORANGE),
+            "A*": (a_star, "A*", RED),
+            "IDA*": (ida_star, "IDA*", DARK_BLUE),
+            "IDS": (ids, "IDS", LIGHT_GREEN),
+            "Simple Hill Climbing": (simple_hill_climbing, "Simple Hill Climbing", ORANGE),
+            "Hill Climbing": (hill_climbing, "Hill Climbing", ORANGE),
+            "Stochastic Hill Climbing": (stochastic_hill_climbing, "Stochastic Hill Climbing", LIGHT_BLUE)
+        }
+
+        solved = False
+        path = None
+        result_info = None
+        
+        # Tạo nút giải
+        solve_button = Button(
+            TOTAL_WIDTH // 2 - 100,  # Căn giữa theo chiều ngang
+            TOTAL_HEIGHT - 160, 
+            200, 50, 
+            "Solve", 
+            color=GREEN, 
+            hover_color=LIGHT_GREEN
+        )
+
+        # Tạo nút Back
+        back_button = Button(
+            TOTAL_WIDTH // 2 - 100,  # Căn giữa theo chiều ngang
+            TOTAL_HEIGHT - 90, 
+            200, 50, 
+            "Back", 
+            color=RED, 
+            hover_color=LIGHT_BLUE
+        )
+        
+        # Vị trí của các bảng
+        initial_x = PADDING
+        goal_x = TOTAL_WIDTH - BOARD_SIZE - PADDING
+        board_y = PADDING + 100  # Đặt bảng trạng thái ở trên cùng
+        
+        # Vòng lặp chính
+        running = True
+        clock = pygame.time.Clock()
+        
+        while running:
+            mouse_pos = pygame.mouse.get_pos()
+            
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    pygame.quit()
+                    sys.exit()
+                
+                # Kiểm tra sự kiện click chuột
+                if event.type == pygame.MOUSEBUTTONDOWN:
+                    if solve_button.is_clicked(mouse_pos, event):
+                        # Kiểm tra trạng thái có thể giải được
+                        if not is_solvable(initial_state):
+                            print("Trạng thái không thể giải được!")
+                            draw_message_box("Không thể giải được", RED)
                             pygame.display.flip()
-                            pygame.time.wait(2000)
-                            visualize_solution(initial_state, goal_state, path, result_info)
-                        else:
-                            print("No solution found!")
-                            draw_message_box("Không thể thực hiện", RED)
-                            pygame.display.flip()
-                            pygame.time.wait(2000)
-                    else:
-                        # Các thuật toán khác
+                            pygame.time.wait(2000)  # Hiển thị thông báo trong 2 giây
+                            continue
+
+                        # Thực hiện giải thuật toán đã chọn
+                        algo_func = algorithms[selected_algorithm][0]
+                        print(f"Solving with {algorithms[selected_algorithm][1]}...")
                         path, result_info = algo_func(initial_state, goal_state)
                         if path:
                             solved = True
@@ -696,39 +724,39 @@ def main_menu():
                             draw_message_box("Không thể thực hiện", RED)
                             pygame.display.flip()
                             pygame.time.wait(2000)
-        
-        # Kiểm tra hover
-        for button in algo_buttons.values():
-            button.check_hover(mouse_pos)
-        solve_button.check_hover(mouse_pos)
-        
-        # Xóa màn hình
-        SCREEN.fill(WHITE)
-        
-        # Thanh công cụ
-        toolbar_rect = pygame.Rect(0, 0, TOTAL_WIDTH, 80)
-        pygame.draw.rect(SCREEN, LIGHT_BLUE, toolbar_rect)
-        pygame.draw.rect(SCREEN, DARK_BLUE, toolbar_rect, 3)
-        
-        # Tiêu đề chính
-        main_title = TITLE_FONT.render("8-Puzzle Solver", True, BLACK)
-        SCREEN.blit(main_title, (TOTAL_WIDTH // 2 - main_title.get_width() // 2, 20))
-        
-        # Vẽ trạng thái ban đầu
-        draw_board(initial_state, initial_x, board_y, "Initial State")
-        
-        # Vẽ trạng thái đích
-        draw_board(goal_state, goal_x, board_y, "Goal State")
-        
-        # Vẽ các nút thuật toán
-        for algo_key, button in algo_buttons.items():
-            button.draw(selected=algo_key == selected_algorithm)
+                    elif back_button.is_clicked(mouse_pos, event):
+                        running = False  # Thoát khỏi vòng lặp hiện tại để quay lại menu chọn thuật toán
             
-        # Vẽ nút giải
-        solve_button.draw()
-        
-        pygame.display.flip()
-        clock.tick(60)
+            # Kiểm tra hover
+            solve_button.check_hover(mouse_pos)
+            back_button.check_hover(mouse_pos)
+            
+            # Xóa màn hình
+            SCREEN.fill(WHITE)
+            
+            # Thanh công cụ
+            toolbar_rect = pygame.Rect(0, 0, TOTAL_WIDTH, 80)
+            pygame.draw.rect(SCREEN, LIGHT_BLUE, toolbar_rect)
+            pygame.draw.rect(SCREEN, DARK_BLUE, toolbar_rect, 3)
+            
+            # Tiêu đề chính
+            main_title = TITLE_FONT.render("8-Puzzle Solver", True, BLACK)
+            SCREEN.blit(main_title, (TOTAL_WIDTH // 2 - main_title.get_width() // 2, 20))
+            
+            # Vẽ trạng thái ban đầu
+            draw_board(initial_state, initial_x, board_y, "Initial State")
+            
+            # Vẽ trạng thái đích
+            draw_board(goal_state, goal_x, board_y, "Goal State")
+            
+            # Vẽ nút giải
+            solve_button.draw()
+
+            # Vẽ nút Back
+            back_button.draw()
+            
+            pygame.display.flip()
+            clock.tick(60)
 
 def visualize_solution(initial_state, goal_state, path, result_info):
     clock = pygame.time.Clock()
@@ -771,19 +799,7 @@ def visualize_solution(initial_state, goal_state, path, result_info):
             if event.type == pygame.QUIT:
                 pygame.quit()
                 sys.exit()
-            elif event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_RIGHT and step_index < steps_total:
-                    step_index += 1
-                elif event.key == pygame.K_LEFT and step_index > 0:
-                    step_index -= 1
-                elif event.key == pygame.K_SPACE:
-                    auto_play = not auto_play
-                    last_step_time = current_time
-                elif event.key == pygame.K_ESCAPE:
-                    running = False
-
-            # Kiểm tra click chuột lên các nút
-            if event.type == pygame.MOUSEBUTTONDOWN:
+            elif event.type == pygame.MOUSEBUTTONDOWN:
                 if prev_btn.is_clicked(mouse_pos, event) and step_index > 0:
                     step_index -= 1
                 elif play_btn.is_clicked(mouse_pos, event):
@@ -803,7 +819,7 @@ def visualize_solution(initial_state, goal_state, path, result_info):
                         speed_factor = 1.0
                     speed_btn.text = f"Tốc độ x{speed_factor}"
                 elif back_btn.is_clicked(mouse_pos, event):
-                    running = False
+                    return  # Quay lại giao diện chọn thuật toán
 
         # Kiểm tra hover
         prev_btn.check_hover(mouse_pos)
@@ -814,10 +830,6 @@ def visualize_solution(initial_state, goal_state, path, result_info):
 
         # Xóa màn hình
         SCREEN.fill(WHITE)
-
-        # Tiêu đề
-        # title = TITLE_FONT.render("Kết quả giải 8-Puzzle", True, BLACK)
-        # SCREEN.blit(title, (TOTAL_WIDTH // 2 - title.get_width() // 2, PADDING // 2))
 
         # Vẽ trạng thái ban đầu
         draw_board(initial_state, initial_x, board_y, "Initial State")
@@ -906,6 +918,60 @@ def hill_climbing(start_state, goal_state):
         state = best_neighbor  # Cập nhật trạng thái tốt nhất
 
     return state
+
+
+import random
+
+def stochastic_hill_climbing(initial_state, goal_state):
+    """
+    Thuật toán Stochastic Hill Climbing cho bài toán 8-Puzzle.
+    """
+    current_state = initial_state
+    path = [current_state]
+    visited = set()
+    steps = 0
+    start_time = time.time()
+
+    while current_state != goal_state:
+        visited.add(current_state)
+        steps += 1
+
+        # Lấy tất cả các trạng thái lân cận
+        neighbors = current_state.get_possible_moves()
+
+        # Lọc các trạng thái lân cận tốt hơn trạng thái hiện tại
+        better_neighbors = [
+            neighbor for neighbor in neighbors
+            if heuristic(neighbor, goal_state) < heuristic(current_state, goal_state)
+        ]
+
+        # Nếu không có trạng thái lân cận nào tốt hơn, dừng thuật toán
+        if not better_neighbors:
+            end_time = time.time()
+            return None, {
+                "error": "Không tìm thấy lời giải!",
+                "steps_checked": steps,
+                "time": end_time - start_time,
+                "states_visited": len(visited)
+            }
+
+        # Chọn ngẫu nhiên một trạng thái lân cận tốt hơn
+        next_state = random.choice(better_neighbors)
+
+        # Chuyển sang trạng thái lân cận được chọn
+        current_state = next_state
+        path.append(current_state)
+
+    # Nếu tìm thấy trạng thái đích
+    end_time = time.time()
+    result_info = {
+        "steps_checked": steps,
+        "path_length": len(path),
+        "time": end_time - start_time,
+        "states_visited": len(visited)
+    }
+    return path, result_info
+
 
 def main():
     main_menu()
