@@ -6,6 +6,8 @@ import time
 import heapq
 import queue as Q
 import numpy as np
+import random
+import math
 
 # Priority Queue cho thuật toán UCS
 class PriorityQueue(object):
@@ -577,7 +579,8 @@ def algorithm_menu():
         "IDS",
         "Simple Hill Climbing",
         "Hill Climbing",
-        "Stochastic Hill Climbing"
+        "Stochastic Hill Climbing",
+        "Simulated Annealing"  # Thêm Simulated Annealing
     ]
 
     # Tạo các nút cho từng thuật toán
@@ -651,7 +654,8 @@ def main_menu():
             "IDS": (ids, "IDS", LIGHT_GREEN),
             "Simple Hill Climbing": (simple_hill_climbing, "Simple Hill Climbing", ORANGE),
             "Hill Climbing": (hill_climbing, "Hill Climbing", ORANGE),
-            "Stochastic Hill Climbing": (stochastic_hill_climbing, "Stochastic Hill Climbing", LIGHT_BLUE)
+            "Stochastic Hill Climbing": (stochastic_hill_climbing, "Stochastic Hill Climbing", LIGHT_BLUE),
+            "Simulated Annealing": (simulated_annealing, "Simulated Annealing", YELLOW)  # Thêm Simulated Annealing
         }
 
         solved = False
@@ -920,7 +924,61 @@ def hill_climbing(start_state, goal_state):
     return state
 
 
-import random
+
+def simulated_annealing(initial_state, goal_state, initial_temperature=1000, cooling_rate=0.99, min_temperature=0.1):
+    """
+    Thuật toán Simulated Annealing cho bài toán 8-Puzzle.
+    """
+    current_state = initial_state
+    current_heuristic = heuristic(current_state, goal_state)
+    temperature = initial_temperature
+    path = [current_state]
+    steps = 0
+    visited = set()
+    start_time = time.time()
+
+    while temperature > min_temperature:
+        steps += 1
+        visited.add(current_state)
+
+        # Lấy tất cả các trạng thái lân cận
+        neighbors = current_state.get_possible_moves()
+
+        # Chọn ngẫu nhiên một trạng thái lân cận
+        next_state = random.choice(neighbors)
+        next_heuristic = heuristic(next_state, goal_state)
+
+        # Tính toán sự thay đổi heuristic
+        delta_heuristic = next_heuristic - current_heuristic
+
+        # Quyết định chấp nhận trạng thái mới
+        if delta_heuristic < 0 or random.uniform(0, 1) < math.exp(-delta_heuristic / temperature):
+            current_state = next_state
+            current_heuristic = next_heuristic
+            path.append(current_state)
+
+        # Kiểm tra nếu đã đạt trạng thái đích
+        if current_state == goal_state:
+            end_time = time.time()
+            result_info = {
+                "steps_checked": steps,
+                "path_length": len(path),
+                "time": end_time - start_time,
+                "states_visited": len(visited)
+            }
+            return path, result_info
+
+        # Giảm nhiệt độ
+        temperature *= cooling_rate
+
+    # Nếu không tìm thấy lời giải
+    end_time = time.time()
+    return None, {
+        "error": "Không tìm thấy lời giải!",
+        "steps_checked": steps,
+        "time": end_time - start_time,
+        "states_visited": len(visited)
+    }
 
 def stochastic_hill_climbing(initial_state, goal_state):
     """
