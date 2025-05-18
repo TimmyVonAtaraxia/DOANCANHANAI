@@ -8,6 +8,10 @@ import queue as Q
 import numpy as np
 import random
 import math
+import tkinter as tk  
+from tkinter import ttk
+import csv  
+import matplotlib.pyplot as plt  
 
 
 WHITE = (255, 255, 255)
@@ -1021,7 +1025,6 @@ class AndOrNode:
         self.children = []  # Các node con
         self.type = "OR"  # Loại node: "AND" hoặc "OR"
 
-import time
 
 def and_or_graph_search(initial_state, goal_state):
     """
@@ -1482,6 +1485,7 @@ def astar_belief(initial_belief, goal_state):
     return None, {"error": "Không tìm thấy lời giải!"}
 
 def hill_climbing_belief(initial_belief, goal_state):
+
     """
     Hill Climbing với không gian niềm tin
     """
@@ -1522,6 +1526,320 @@ def hill_climbing_belief(initial_belief, goal_state):
             }
 
     return None, {"error": "Không tìm thấy lời giải!"}
+
+def backtracking(initial_state, goal_state, max_depth=30):
+    """
+    Thuật toán Backtracking cho bài toán 8-Puzzle.
+    Sử dụng đệ quy thử tất cả các khả năng, dừng khi tìm thấy lời giải đầu tiên.
+    max_depth: giới hạn độ sâu để tránh lặp vô tận.
+    Trả về (path, info) hoặc (None, info) nếu không tìm thấy.
+    """
+    result = []
+    visited = set()
+    found = [False]
+    steps = [0]
+    start_time = time.time()
+
+    def dfs(state, path, depth):
+        if found[0]:
+            return
+        steps[0] += 1
+        if state == goal_state:
+            result.extend(path + [state])
+            found[0] = True
+            return
+        if depth >= max_depth:
+            return
+        visited.add(state)
+        for neighbor in state.get_possible_moves():
+            if neighbor not in visited:
+                dfs(neighbor, path + [state], depth + 1)
+        visited.remove(state)
+
+    dfs(initial_state, [], 0)
+    end_time = time.time()
+    if result:
+        return result, {
+            "steps_checked": steps[0],
+            "path_length": len(result) - 1,
+            "time": end_time - start_time,
+            "states_visited": len(set(result))
+        }
+    else:
+        return None, {
+            "error": "Không tìm thấy lời giải!",
+            "steps_checked": steps[0],
+            "time": end_time - start_time,
+            "states_visited": len(visited)
+        }
+    
+def ac3_solve(initial_state, goal_state, max_attempts=10000):
+    """
+    AC3 cho bài toán 3x3 với giá trị 0-8 xuất hiện đúng 1 lần.
+    Tự sinh nhiều lần, chạy AC3 kiểm tra tính hợp lệ,
+    nếu nghiệm trùng goal_state thì trả về path.
+    """
+    variables = [(i, j) for i in range(3) for j in range(3)]
+    path = []
+    steps = 0
+    start_time = time.time()
+
+    def draw_current_domains(domains):
+        board = [[next(iter(domains[(i, j)])) if len(domains[(i, j)]) == 1 else 0 for j in range(3)] for i in range(3)]
+        path.append([row[:] for row in board])
+        SCREEN.fill(WHITE)
+        
+        # Vẽ bảng hiện tại
+        current_state = PuzzleState(board)
+        draw_board(current_state, TOTAL_WIDTH//2 - BOARD_SIZE//2, TOTAL_HEIGHT//2 - BOARD_SIZE//2)
+        
+        # Vẽ bảng đích
+        draw_board(goal_state, TOTAL_WIDTH - BOARD_SIZE - PADDING, PADDING + 100, "Goal State")
+        
+        # Vẽ thông tin
+        elapsed_time = time.time() - start_time
+        info_text = f"Steps: {steps} | Time: {elapsed_time:.2f}s"
+        text = INFO_FONT.render(info_text, True, BLACK)
+        SCREEN.blit(text, (PADDING, TOTAL_HEIGHT - 50))
+        
+        pygame.display.flip()
+
+    def constraints_func(xi, vi, xj, vj):
+        return vi != vj
+
+    def revise(xi, xj, domains):
+        revised = False
+        to_remove = set()
+        for vi in domains[xi]:
+            if all(not constraints_func(xi, vi, xj, vj) for vj in domains[xj]):
+                to_remove.add(vi)
+        if to_remove:
+            domains[xi] -= to_remove
+            revised = True
+        return revised
+
+    def ac3(domains):
+        queue = deque([(xi, xj) for xi in variables for xj in variables if xi != xj])
+        while queue:
+            xi, xj = queue.popleft()
+            draw_current_domains(domains)
+            if revise(xi, xj, domains):
+                draw_current_domains(domains)
+                if not domains[xi]:
+                    return False
+                for xk in variables:
+                    if xk != xi and xk != xj:
+                        queue.append((xk, xi))
+        return True
+
+    attempts = 0
+    while attempts < max_attempts:
+        steps += 1
+        # Sinh ngẫu nhiên giá trị 0-8 không trùng cho từng ô
+        values = list(range(9))
+        random.shuffle(values)
+        domains = {var: {val} for var, val in zip(variables, values)}
+
+        if not ac3(domains):
+            attempts += 1
+            continue
+
+        # Lấy nghiệm hiện tại
+        current_assignment = [[next(iter(domains[(i, j)])) for j in range(3)] for i in range(3)]
+
+        # Nếu khớp goal_state thì trả về path
+        if current_assignment == goal_state.board.tolist():
+            path.append(current_assignment)
+            end_time = time.time()
+            return path, {
+                "steps_checked": steps,
+                "path_length": len(path),
+                "time": end_time - start_time,
+                "states_visited": attempts
+            }
+
+        attempts += 1
+
+    # Không tìm được nghiệm khớp goal_state
+    end_time = time.time()
+    return None, {
+        "error": "Không tìm thấy lời giải!",
+        "steps_checked": steps,
+        "time": end_time - start_time,
+        "states_visited": attempts
+    }
+
+def testing_solve(initial_state, goal_state, max_attempts=100000):
+    """
+    Kiểm thử CSP 8-puzzle bằng BFS không dùng -1.
+    Gán tuần tự vào các ô theo thứ tự, đảm bảo AllDifferent và có đúng 1 số 0.
+    """
+    variables = [(i, j) for i in range(3) for j in range(3)]
+    path = []
+    steps = 0
+    start_time = time.time()
+
+    def draw_current(state):
+        SCREEN.fill(WHITE)
+        # Vẽ bảng hiện tại
+        draw_board(PuzzleState(state), 
+                  TOTAL_WIDTH//2 - BOARD_SIZE//2,
+                  TOTAL_HEIGHT//2 - BOARD_SIZE//2)
+        # Vẽ bảng đích
+        draw_board(goal_state, 
+                  TOTAL_WIDTH - BOARD_SIZE - PADDING,
+                  PADDING + 100,
+                  "Goal State")
+        
+        # Vẽ thông tin
+        elapsed_time = time.time() - start_time
+        info_text = f"Steps: {steps} | Time: {elapsed_time:.2f}s"
+        text = INFO_FONT.render(info_text, True, BLACK)
+        SCREEN.blit(text, (PADDING, TOTAL_HEIGHT - 50))
+        
+        pygame.display.flip()
+        path.append([row[:] for row in state])
+
+    initial_state = [[0]*3 for _ in range(3)]  # Mặc định là toàn 0
+    frontier = deque()
+    frontier.append((initial_state, [], 0))  # state, assigned_values, index
+
+    attempts = 0
+    while frontier and attempts < max_attempts:
+        state, assigned_values, index = frontier.popleft()
+        steps += 1
+
+        draw_current(state)
+
+        if index == len(variables):
+            if state == goal_state.board.tolist():
+                end_time = time.time()
+                return path, {
+                    "steps_checked": steps,
+                    "path_length": len(path),
+                    "time": end_time - start_time,
+                    "states_visited": attempts
+                }
+            attempts += 1
+            continue
+
+        for v in range(9):
+            if v not in assigned_values:
+                i, j = variables[index]
+                new_state = [row[:] for row in state]
+                new_state[i][j] = v
+                new_values = assigned_values + [v]
+                frontier.append((new_state, new_values, index + 1))
+
+    end_time = time.time()
+    return None, {
+        "error": "Không tìm thấy lời giải!",
+        "steps_checked": steps,
+        "time": end_time - start_time,
+        "states_visited": attempts
+    }
+
+def state_to_tuple(state):
+    """Chuyển trạng thái từ ma trận sang tuple để làm khóa trong Q-table."""
+    return tuple(tuple(row) for row in state)
+
+def state_to_list(state_tuple):
+    """Chuyển trạng thái từ tuple sang list."""
+    return [list(row) for row in state_tuple]
+
+def q_learning_solve(initial_state, goal_state, episodes=1000, alpha=0.1, gamma=0.9, epsilon=0.1):
+    """
+    Giải thuật Q-Learning để tìm đường đi từ trạng thái bắt đầu đến trạng thái đích.
+    """
+    def choose_action(state, q_table):
+        """Chọn hành động dựa trên epsilon-greedy."""
+        if random.random() < epsilon:
+            return random.choice(get_neighbors(state))
+        else:
+            state_tuple = state.to_tuple()
+            if state_tuple in q_table:
+                neighbors = get_neighbors(state)
+                best_neighbor = max(neighbors, key=lambda n: q_table[state_tuple].get(n.to_tuple(), 0))
+                return best_neighbor
+            else:
+                return random.choice(get_neighbors(state))
+
+    # Khởi tạo Q-table
+    q_table = {}
+    start_time = time.time()
+    steps = 0
+    max_steps_per_episode = 100  # Giới hạn số bước mỗi episode
+    time_limit = 30  # Giới hạn thời gian 30 giây
+
+    for episode in range(episodes):
+        if time.time() - start_time > time_limit:
+            break
+
+        current_state = initial_state
+        episode_steps = 0
+
+        while current_state != goal_state and episode_steps < max_steps_per_episode:
+            if time.time() - start_time > time_limit:
+                break
+
+            state_tuple = current_state.to_tuple()
+            if state_tuple not in q_table:
+                neighbors = get_neighbors(current_state)
+                q_table[state_tuple] = {n.to_tuple(): 0 for n in neighbors}
+
+            # Chọn hành động
+            next_state = choose_action(current_state, q_table)
+            next_state_tuple = next_state.to_tuple()
+
+            # Tính phần thưởng
+            reward = 1 if next_state == goal_state else -0.1
+
+            # Cập nhật Q-value
+            if next_state_tuple not in q_table:
+                next_neighbors = get_neighbors(next_state)
+                q_table[next_state_tuple] = {n.to_tuple(): 0 for n in next_neighbors}
+            max_next_q = max(q_table[next_state_tuple].values(), default=0)
+            q_table[state_tuple][next_state_tuple] += alpha * (reward + gamma * max_next_q - q_table[state_tuple][next_state_tuple])
+
+            # Chuyển sang trạng thái tiếp theo
+            current_state = next_state
+            steps += 1
+            episode_steps += 1
+
+            # Nếu đã tìm thấy goal state, thoát khỏi vòng lặp
+            if current_state == goal_state:
+                break
+
+    # Tìm đường đi tốt nhất
+    path = [initial_state]
+    current_state = initial_state
+    max_path_length = 100  # Giới hạn độ dài đường đi
+
+    while current_state != goal_state and len(path) < max_path_length:
+        state_tuple = current_state.to_tuple()
+        if state_tuple in q_table:
+            neighbors = get_neighbors(current_state)
+            next_state = max(neighbors, key=lambda n: q_table[state_tuple].get(n.to_tuple(), 0))
+            path.append(next_state)
+            current_state = next_state
+        else:
+            break
+
+    elapsed_time = time.time() - start_time
+    if current_state == goal_state:
+        return path, {
+            "steps_checked": steps,
+            "path_length": len(path),
+            "time": elapsed_time,
+            "states_visited": len(q_table)
+        }
+    return None, {
+        "error": "Không tìm thấy lời giải!",
+        "steps_checked": steps,
+        "time": elapsed_time,
+        "states_visited": len(q_table)
+    }
+
 
 # Lớp Button để tạo các nút tương tác
 class Button:
@@ -1625,13 +1943,11 @@ def algorithm_menu():
         
         # Khởi tạo danh sách các thuật toán
         algorithms = [
-            "BFS", "DFS", "UCS", "Greedy", "A*", 
-            "IDA*", "IDS", "Simple Hill Climbing",
-            "Hill Climbing", "Stochastic Hill Climbing",
-            "Simulated Annealing", "Beam Search",
-            "AND-OR Graph Search", "Sensorless Problem",
-            "Sensorless Search",
-            "Genetic Algorithm"
+            "BFS", "DFS", "UCS", "IDS", "Greedy", "A*", "IDA*", 
+            "Simple Hill Climbing", "Hill Climbing", "Stochastic Hill Climbing",
+            "Simulated Annealing", "Beam Search", "AND-OR Graph Search",
+            "Sensorless Problem", "Sensorless Search", "Genetic Algorithm",
+            "Backtracking", "AC3", "Testing", "QLearning"
         ]
         
         # Tính toán vị trí cho các nút
@@ -1695,6 +2011,7 @@ def algorithm_menu():
         print(f"Lỗi trong algorithm_menu: {str(e)}")
         return None
 
+        
 def main_menu():
     try:
         while True:
@@ -1733,7 +2050,11 @@ def main_menu():
                 "AND-OR Graph Search": (and_or_graph_search, "AND-OR Graph Search", LIGHT_BLUE),
                 "Sensorless Problem": (sensorless_problem, "Sensorless Problem", PURPLE),
                 "Sensorless Search": (sensorless_search, "Sensorless Search", PURPLE),
-                "Genetic Algorithm": (genetic_algorithm, "Genetic Algorithm", PURPLE)
+                "Genetic Algorithm": (genetic_algorithm, "Genetic Algorithm", PURPLE),
+                "Backtracking": (backtracking, "Backtracking", LIGHT_GREEN),
+                "AC3": (ac3_solve, "AC3", LIGHT_GREEN),
+                "Testing": (testing_solve, "Testing", LIGHT_GREEN),
+                "QLearning": (q_learning_solve, "Q-Learning", LIGHT_GREEN)
             }
 
             solved = False
@@ -1962,7 +2283,11 @@ def visualize_solution(initial_state, goal_state, path, result_info):
                     elif speed_factor == 2.0:
                         speed_factor = 3.0
                     elif speed_factor == 3.0:
-                        speed_factor = 0.5
+                        speed_factor = 5.0
+                    elif speed_factor == 5.0:
+                        speed_factor = 7.0
+                    elif speed_factor == 7.0:
+                        speed_factor = 10.0
                     else:
                         speed_factor = 1.0
                     speed_btn.text = f"Tốc độ x{speed_factor}"
@@ -1982,19 +2307,31 @@ def visualize_solution(initial_state, goal_state, path, result_info):
         current_state = path[step_index] if step_index < len(path) else path[-1]
         draw_board(current_state, current_x, current_y, "Current State", highlight=True)
 
-        step_text = INFO_FONT.render(f"Bước: {step_index}/{steps_total}", True, BLACK)
-        SCREEN.blit(step_text, (PADDING, current_y + BOARD_SIZE + 20))
-
-        info_x = goal_x
+        # Hiển thị thông tin ở giữa khoảng trống giữa initial và goal state
+        info_x = (initial_x + goal_x + BOARD_SIZE) // 2 - 150
+        info_y = board_y + 20
+        
+        # Vẽ khung thông tin
+        info_rect = pygame.Rect(info_x, info_y, 300, 150)
+        pygame.draw.rect(SCREEN, LIGHT_BLUE, info_rect, border_radius=10)
+        pygame.draw.rect(SCREEN, BLACK, info_rect, 2, border_radius=10)
+        
+        # Hiển thị các thông tin
+        info_text = INFO_FONT.render(f"Bước: {step_index}/{steps_total}", True, BLACK)
+        SCREEN.blit(info_text, (info_x + 10, info_y + 10))
+        
         info_text = INFO_FONT.render(f"Tổng số bước: {steps_total}", True, BLACK)
-        SCREEN.blit(info_text, (info_x, board_y + 20))
+        SCREEN.blit(info_text, (info_x + 10, info_y + 40))
+        
         info_text = INFO_FONT.render(f"Trạng thái đã xét: {result_info['steps_checked']}", True, BLACK)
-        SCREEN.blit(info_text, (info_x, board_y + 50))
+        SCREEN.blit(info_text, (info_x + 10, info_y + 70))
+        
         info_text = INFO_FONT.render(f"Thời gian: {result_info['time']:.4f} giây", True, BLACK)
-        SCREEN.blit(info_text, (info_x, board_y + 80))
+        SCREEN.blit(info_text, (info_x + 10, info_y + 100))
+        
         if 'final_belief_size' in result_info:
             info_text = INFO_FONT.render(f"Kích thước niềm tin cuối: {result_info['final_belief_size']}", True, BLACK)
-            SCREEN.blit(info_text, (info_x, board_y + 110))
+            SCREEN.blit(info_text, (info_x + 10, info_y + 130))
 
         prev_btn.draw()
         play_btn.text = "Dừng" if auto_play else "Chạy"
@@ -2019,18 +2356,23 @@ def compare_algorithms(initial_belief, goal_belief):
         "BFS": bfs,
         "DFS": dfs, 
         "UCS": ucs,
+        "IDS": ids,
         "Greedy": greedy_search,
         "A*": a_star,
         "IDA*": ida_star,
-        "IDS": ids,
-        "Simple Hill Climbing": simple_hill_climbing,
-        "Stochastic Hill Climbing": stochastic_hill_climbing,
-        "Simulated Annealing": simulated_annealing,
-        "Beam Search": beam_search,
-        "AND-OR Graph Search": and_or_graph_search,
-        "Sensorless Problem": sensorless_problem,
-        "Sensorless Search": sensorless_search,
-        "Genetic Algorithm": genetic_algorithm
+        "SHC": simple_hill_climbing,
+        "S_AHC": hill_climbing,
+        "Stochastic": stochastic_hill_climbing,
+        "SA": simulated_annealing,
+        "BeamSearch": beam_search,
+        "Genetic": genetic_algorithm,
+        "AND-OR": and_or_graph_search,
+        "Sensorless": sensorless_search,
+        "Partial": partial_observation_search,
+        "Backtracking": backtracking,
+        "AC3": ac3_solve,
+        "Testing": testing_solve,
+        "QLearning": q_learning_solve
     }
 
     results = []
@@ -2155,6 +2497,8 @@ def main():
     finally:
         pygame.quit()
 
+
+
+
 if __name__ == "__main__":  
     main()
-
