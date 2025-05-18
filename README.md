@@ -45,12 +45,19 @@ Các thuật toán trong nhóm này thực hiện tìm kiếm mà không sử d�
 
 *   **Các thuật toán đã triển khai:**
     *   **BFS (Breadth-First Search):** Sử dụng hàng đợi (deque) để lưu trữ và xử lý các trạng thái theo thứ tự ưu tiên theo độ sâu. Mỗi phần tử trong hàng đợi chứa thông tin về trạng thái hiện tại và đường đi đã thực hiện. Thuật toán duy trì một tập hợp các trạng thái đã thăm để tránh lặp lại. Tại mỗi bước, thuật toán lấy trạng thái đầu tiên từ hàng đợi, kiểm tra mục tiêu, và thêm các trạng thái kế tiếp chưa thăm vào hàng đợi. Đảm bảo tìm được đường đi ngắn nhất.
+
     ![](Gif/BFS.gif)
+
     *   **DFS (Depth-First Search):** Sử dụng ngăn xếp để lưu trữ các trạng thái cần xử lý. Mỗi phần tử trong ngăn xếp chứa thông tin về trạng thái hiện tại, đường đi và độ sâu. Thuật toán có giới hạn độ sâu tối đa (50) để tránh lặp vô tận. Tại mỗi bước, thuật toán lấy trạng thái trên cùng của ngăn xếp, kiểm tra mục tiêu, và thêm các trạng thái kế tiếp chưa thăm vào ngăn xếp nếu chưa đạt giới hạn độ sâu.
+
     ![](Gif/DFS.gif)
+
     *   **UCS (Uniform Cost Search):** Sử dụng hàng đợi ưu tiên để lưu trữ các trạng thái theo chi phí đường đi. Mỗi phần tử trong hàng đợi chứa thông tin về chi phí, trạng thái và đường đi. Chi phí được tính bằng số bước di chuyển từ trạng thái ban đầu. Thuật toán duy trì một tập hợp các trạng thái đã thăm. Tại mỗi bước, thuật toán lấy trạng thái có chi phí thấp nhất, kiểm tra mục tiêu, và thêm các trạng thái kế tiếp chưa thăm vào hàng đợi với chi phí tương ứng.
+
     ![](Gif/UCS.gif)
+
     *   **IDS (Iterative Deepening Search):** Kết hợp ưu điểm của BFS và DFS bằng cách thực hiện DFS với giới hạn độ sâu tăng dần. Thuật toán bắt đầu với độ sâu 0 và tăng dần cho đến khi tìm thấy giải pháp. Tại mỗi độ sâu, thuật toán sử dụng ngăn xếp để lưu trữ các trạng thái cần xử lý, với mỗi phần tử chứa thông tin về trạng thái, đường đi và độ sâu hiện tại.
+
     ![](Gif/IDS.gif)
 
 *   **So sánh hiệu suất:**
@@ -99,10 +106,15 @@ Các thuật toán trong nhóm này sử dụng thông tin bổ sung (hàm heuri
 
 *   **Các thuật toán đã triển khai:**
     *   **A* (A-Star Search):** Sử dụng hàm đánh giá f(n) = g(n) + h(n), trong đó g(n) là chi phí từ trạng thái ban đầu đến trạng thái hiện tại, và h(n) là ước lượng chi phí từ trạng thái hiện tại đến đích. Thuật toán duy trì một hàng đợi ưu tiên để lưu trữ các trạng thái theo giá trị f(n). Tại mỗi bước, thuật toán lấy trạng thái có giá trị f(n) thấp nhất, kiểm tra mục tiêu, và thêm các trạng thái kế tiếp vào hàng đợi với giá trị f(n) tương ứng.
+
     ![](Gif/Astar.gif)
+
     *   **Greedy Best-First Search:** Sử dụng hàm heuristic h(n) để hướng dẫn tìm kiếm. Thuật toán duy trì một hàng đợi ưu tiên để lưu trữ các trạng thái theo giá trị h(n). Tại mỗi bước, thuật toán lấy trạng thái có giá trị h(n) thấp nhất, kiểm tra mục tiêu, và thêm các trạng thái kế tiếp vào hàng đợi với giá trị h(n) tương ứng.
+
     ![](Gif/Greedy.gif)
+
     *   **IDA* (Iterative Deepening A*):** Kết hợp ý tưởng của IDS và A* bằng cách thực hiện tìm kiếm A* với giới hạn f(n) tăng dần. Thuật toán bắt đầu với giới hạn f(n) bằng giá trị h(n) của trạng thái ban đầu và tăng dần cho đến khi tìm thấy giải pháp. Tại mỗi giới hạn, thuật toán thực hiện tìm kiếm sâu có giới hạn với hàm đánh giá f(n).
+
     ![](Gif/IDAstar.gif)
 
 *   **So sánh hiệu suất:**
@@ -143,14 +155,22 @@ Các thuật toán trong nhóm này duy trì một hoặc một vài trạng th�
 
 *   **Các thuật toán đã triển khai:**
     *   **Simple Hill Climbing:** Di chuyển đến trạng thái lân cận đầu tiên có giá trị hàm đánh giá tốt hơn trạng thái hiện tại. Thuật toán dừng khi không tìm thấy trạng thái lân cận tốt hơn.
+
     ![](Gif/SimpleHillClimbing.gif)
+
     *   **Hill Climbing:** Di chuyển đến trạng thái lân cận có giá trị hàm đánh giá tốt nhất trong tất cả các trạng thái lân cận. Thuật toán dừng khi không tìm thấy trạng thái lân cận tốt hơn.
+
     ![](Gif/HillClimbing.gif)
+
     *   **Stochastic Hill Climbing:** Chọn ngẫu nhiên một trạng thái lân cận tốt hơn từ danh sách các trạng thái lân cận tốt hơn. Thuật toán dừng khi không tìm thấy trạng thái lân cận tốt hơn.
+
     ![](Gif/StochasticHillClimbing.gif)
+
     *   **Simulated Annealing:** Cho phép di chuyển đến trạng thái xấu hơn với xác suất giảm dần theo thời gian (nhiệt độ). Thuật toán bắt đầu với nhiệt độ cao và giảm dần theo thời gian. Xác suất chấp nhận trạng thái xấu hơn giảm dần theo nhiệt độ.
     *   **Beam Search:** Duy trì một tập hợp k trạng thái tốt nhất hiện tại và mở rộng chúng ở mỗi bước. Thuật toán chỉ giữ lại k trạng thái tốt nhất từ các trạng thái mới sinh ra.
+
     ![](Gif/Beam.gif)
+
     *   **Genetic Algorithm:** Sử dụng các nguyên lý của tiến hóa tự nhiên để tìm kiếm giải pháp. Thuật toán duy trì một quần thể các trạng thái, thực hiện các phép lai ghép và đột biến để tạo ra các trạng thái mới, và chọn lọc các trạng thái tốt nhất để tiếp tục quá trình.
 
 *   **So sánh hiệu suất:**
@@ -197,6 +217,7 @@ Các thuật toán trong nhóm này giải quyết các bài toán khi agent kh�
 
 *   **Thuật toán đã triển khai:**
     *   **No Observation (BFS):** Không nhận được thông tin phản hồi trong quá trình thực hiện. Thuật toán phải tìm một kế hoạch đảm bảo đạt đích mà không cần biết trạng thái cụ thể sau mỗi bước. Sử dụng BFS trên không gian niềm tin để tìm kế hoạch ngắn nhất.
+
     ![](Gif/sensorless.gif)
 
 * **Hiệu suất khi có 1 không gian niềm tin đích**
@@ -231,7 +252,9 @@ Mặc dù bài toán 8-Puzzle tìm đường đi không phải là CSP điển h
 
 *   **Các thuật toán đã triển khai:**
     *   **Backtracking:** Thuật toán quay lui để sinh ra các hoán vị hợp lệ của bàn cờ.
+
     ![](Gif/BackTracking.gif)
+    
         *   **Hiệu suất**:
         ![](PictureFinal/Backtracking.png)
     *   **AC3 (Arc Consistency Algorithm 3):** Thuật toán được triển khai với các thành phần chính:
