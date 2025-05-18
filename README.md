@@ -251,6 +251,50 @@ Mặc dù bài toán 8-Puzzle tìm đường đi không phải là CSP điển h
 *   **Note**: Thuật toán AC3 và Testting có thời gian thực thi rất lâu trạng thái đầu và trạng thái đích
     *   **Trạng thái ban đầu:** [[2, 6, 5], [0, 8, 7], [4, 3, 1]]
     *   **Trạng thái đích:** [[1, 2, 3], [4, 5, 6], [7, 8, 0]]
+#### 2.6. Học tập củng cố (Reforcement Learning)
+
+*   **Các thành phần cơ bản:**
+    *   **Trạng thái:** Cấu hình hiện tại của bảng 8-Puzzle
+    *   **Hành động:** Di chuyển ô trống (lên, xuống, trái, phải)
+    *   **Phần thưởng:** +1 khi đạt trạng thái đích, -0.1 cho mỗi bước di chuyển
+    *   **Q-table:** Bảng lưu trữ giá trị Q cho mỗi cặp (trạng thái, hành động)
+
+*   **Thuật toán Q-Learning:**
+    *   **Khởi tạo:**
+        - Q-table rỗng
+        - Các tham số: alpha (tốc độ học) = 0.1, gamma (hệ số chiết khấu) = 0.9, epsilon (xác suất khám phá) = 0.1
+        - Giới hạn số bước mỗi episode = 100
+        - Giới hạn thời gian = 30 giây
+
+    *   **Quá trình học:**
+        - Mỗi episode bắt đầu từ trạng thái ban đầu
+        - Chọn hành động theo epsilon-greedy policy
+        - Thực hiện hành động và nhận phần thưởng
+        - Cập nhật Q-value theo công thức:
+            Q(s,a) = Q(s,a) + alpha * [r + gamma * max(Q(s',a')) - Q(s,a)]
+        - Lặp lại cho đến khi đạt trạng thái đích hoặc hết giới hạn
+
+    *   **Đặc điểm:**
+        - Sử dụng epsilon-greedy để cân bằng giữa khám phá và khai thác
+        - Tự động học từ kinh nghiệm mà không cần mô hình môi trường
+        - Có thể xử lý các bài toán với không gian trạng thái lớn
+        - Hiệu quả trong việc tìm đường đi tối ưu
+
+    *   **Hiệu suất:**
+        - Thời gian học phụ thuộc vào số episode và độ phức tạp của bài toán
+        - Chất lượng giải pháp cải thiện theo thời gian học
+        - Có thể tìm được đường đi tối ưu sau khi học đủ
+        - Yêu cầu nhiều bộ nhớ để lưu trữ Q-table
+
+*   **So sánh với các thuật toán khác:**
+    - Ưu điểm:
+        + Không cần mô hình môi trường
+        + Có thể học từ kinh nghiệm
+        + Linh hoạt trong việc xử lý các bài toán phức tạp
+    - Hạn chế:
+        + Thời gian học lâu
+        + Yêu cầu nhiều bộ nhớ
+        + Chất lượng phụ thuộc vào việc chọn tham số
 
 ## KẾT LUẬN
 
@@ -271,6 +315,12 @@ Mặc dù bài toán 8-Puzzle tìm đường đi không phải là CSP điển h
    - Simulated Annealing và Genetic Algorithm không hiệu quả với bài toán phức tạp
    - Thời gian thực thi rất nhanh (0.000-0.0115 giây) cho các bài toán đơn giản
 
+4. **Học tập củng cố (Q-Learning):**
+   - Có khả năng học và cải thiện theo thời gian
+   - Không cần mô hình môi trường trước
+   - Thời gian học lâu hơn các thuật toán khác
+   - Hiệu quả trong việc tìm đường đi tối ưu sau khi học đủ
+
 ### 2. Ưu điểm và hạn chế
 
 1. **Ưu điểm:**
@@ -278,12 +328,14 @@ Mặc dù bài toán 8-Puzzle tìm đường đi không phải là CSP điển h
    - Đa dạng các thuật toán cho phép so sánh hiệu suất
    - Có khả năng xử lý các bài toán với không gian niềm tin
    - Hỗ trợ nhiều phương pháp tìm kiếm khác nhau
+   - Tích hợp cả phương pháp cổ điển và hiện đại (Q-Learning)
 
 2. **Hạn chế:**
    - Một số thuật toán (AC3, Testing) có thời gian thực thi lâu
    - Các thuật toán tìm kiếm cục bộ dễ bị kẹt ở cực tiểu cục bộ
    - Chưa tối ưu hóa bộ nhớ cho các bài toán lớn
    - Giới hạn về độ phức tạp của bài toán có thể giải quyết
+   - Q-Learning yêu cầu nhiều bộ nhớ và thời gian học
 
 ### 3. Hướng phát triển
 
@@ -291,16 +343,25 @@ Mặc dù bài toán 8-Puzzle tìm đường đi không phải là CSP điển h
    - Tối ưu hóa các thuật toán có thời gian thực thi lâu
    - Thêm các kỹ thuật cắt tỉa để giảm không gian tìm kiếm
    - Cải thiện hàm heuristic cho các thuật toán có thông tin
+   - Tối ưu hóa Q-Learning với các kỹ thuật như Experience Replay
 
 2. **Mở rộng tính năng:**
    - Thêm các thuật toán tìm kiếm mới
    - Hỗ trợ các bài toán với kích thước lớn hơn
-   - Tích hợp các kỹ thuật học máy để cải thiện hiệu suất
+   - Tích hợp các kỹ thuật học máy nâng cao (Deep Q-Learning, Policy Gradient)
+   - Thêm khả năng học từ nhiều bài toán khác nhau
 
 3. **Cải thiện giao diện:**
    - Thêm các công cụ phân tích hiệu suất chi tiết
    - Cải thiện trực quan hóa quá trình tìm kiếm
    - Thêm tùy chọn cấu hình cho các thuật toán
+   - Hiển thị biểu đồ so sánh hiệu suất giữa các thuật toán
+
+### 4. Tổng kết
+
+Dự án Puzzle8 đã thành công trong việc triển khai và trực quan hóa nhiều thuật toán AI khác nhau để giải quyết bài toán 8-Puzzle. Thông qua việc so sánh hiệu suất của các thuật toán, chúng ta có thể thấy rằng mỗi phương pháp đều có những ưu điểm và hạn chế riêng. Các thuật toán tìm kiếm có thông tin như A* và IDA* thường cho kết quả tốt nhất về mặt đường đi, trong khi các thuật toán tìm kiếm cục bộ hiệu quả với các bài toán đơn giản. Q-Learning mang lại một cách tiếp cận mới, cho phép hệ thống học và cải thiện theo thời gian.
+
+Dự án này không chỉ là một công cụ giải quyết bài toán 8-Puzzle, mà còn là một nền tảng giáo dục và nghiên cứu hữu ích cho việc tìm hiểu về các thuật toán AI. Với những cải tiến và mở rộng trong tương lai, dự án có tiềm năng trở thành một công cụ mạnh mẽ hơn nữa trong lĩnh vực trí tuệ nhân tạo.
 
 ## TÁC GIẢ
 Võ Hữu Tín-23110343
